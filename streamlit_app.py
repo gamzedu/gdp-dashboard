@@ -1,151 +1,42 @@
 import streamlit as st
 import pandas as pd
-import math
-from pathlib import Path
 
-# Set the title and favicon that appear in the Browser's tab bar.
+# Configuration de la page (Design dashboard spatial)
 st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+    page_title="Mars Mission - Sleep Module",
+    page_icon="🌙",
+    layout="centered"
 )
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+# En-tête principal
+st.title("🌙 Mars Mission Copilot")
+st.subheader("Module de Suivi du Sommeil & Rythme Circadien")
+st.markdown("---")
 
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+# Section de saisie pour l'astronaute
+st.markdown("### 📥 Enregistrement du Sommeil Quotidien")
+sleep_hours = st.slider("Combien d'heures as-tu dormies cette nuit ?", 0.0, 12.0, 7.0, 0.5)
+co2_level = st.slider("Niveau de CO2 dans les quartiers (mmHg)", 1.0, 6.0, 2.5, 0.1)
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+# Analyse selon les seuils scientifiques (NASA / HERA)
+st.markdown("### 📊 Analyse & Alertes en Temps Réel")
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+if sleep_hours <= 5.0:
+    st.error(f"🚨 **ALERTE ROUGE (Critique) :** {sleep_hours}h de sommeil. En dessous du seuil HERA ($\le 5\text{h}$). **Verrouillage des tâches de précision (Bras robotique / EVA).**")
+elif sleep_hours < 7.0:
+    st.warning(f"⚠️ **Attention :** {sleep_hours}h de sommeil. Sommeil insuffisant, fatigue modérée détectée.")
+else:
+    st.success(f"✅ **Nominal :** {sleep_hours}h de sommeil. Performances optimales.")
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+# Vérification du CO2 dans la cabine
+if co2_level > 3.0:
+    st.warning(f"⚠️ **Qualité de l'air :** Niveau de $CO_2$ élevé ({co2_level} mmHg). Risque de perturbation du sommeil. Ventilation ajustée.")
+else:
+    st.info(f"💨 **Environnement de sommeil :** $CO_2$ nominal ({co2_level} mmHg).")
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
-    )
-
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
-
-    return gdp_df
-
-gdp_df = get_gdp_data()
-
-# -----------------------------------------------------------------------------
-# Draw the actual page
-
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
-
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+# Section Check-list d'hygiène et de relaxation
+st.markdown("---")
+st.markdown("### 🧘 Protocoles de Contre-Mesure (NASA)")
+st.checkbox("Éclairage SSLA réglé en mode chaud / tamisé (2h avant le coucher)")
+st.checkbox("Check-list Sleep CBT (Gestion du stress pré-sommeil) validée")
+st.checkbox("Bloc de relaxation et self-care quotidien complété")
