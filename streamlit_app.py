@@ -1,11 +1,27 @@
+pip install streamlit-lottie requests
 import streamlit as st
+import requests
+from streamlit_lottie import st_lottie
 
-st.title("🌙 Mars Mission - Sleep Tracker")
+# Fonction pour charger une animation Lottie depuis le web
+def load_lottieurl(url):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
 
-sleep_hours = st.slider("Combien d'heures as-tu dormies ?", 0.0, 12.0, 7.0, 0.5)
+st.title("🌙 Mars Mission - Circadian Module")
 
-if sleep_hours >= 7.0 and sleep_hours <= 9.0:
-    st.success("✅ Sommeil optimal validé !")
-    # Déclenche une animation visuelle de bulles/ballons à l'écran
-    st.balloons()
+# Exemple d'animation (ici un cercle de chargement / pulsation futuriste)
+# Tu peux remplacer l'URL par n'importe quelle animation Lottie gratuite (fleur, nature, techno)
+lottie_flower = load_lottieurl("https://assets5.lottiefiles.com/packages/lf20_jcikwtux.json")
 
+if lottie_flower:
+    st_lottie(lottie_flower, speed=1, height=200, key="flower")
+
+sleep_hours = st.slider("Temps de sommeil (heures) :", 0.0, 12.0, 7.0, 0.5)
+
+if sleep_hours <= 5.0:
+    st.error("🚨 Alerte Critique (Seuil HERA <= 5h)")
+else:
+    st.success("✅ Statut Nominal")
