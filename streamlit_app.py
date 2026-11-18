@@ -25,5 +25,5 @@ if sleep_hours <= 5.0:
     st.error("🚨 Alerte Critique (Seuil HERA <= 5h)")
     st.warning("au boulot !")
 else:
-    st.success("✅ Statut Nominal brvao boss lady, prend soin de ton bff ton corps, souris à la vie élodie")
+    st.success("✅ Bravo !")
 
